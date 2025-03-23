@@ -1,7 +1,7 @@
 import { APIGatewayEvent, Context } from 'aws-lambda';
-import { AppointmentService } from '../services/appointmentService';
-import { MessagingService } from '../services/messagingService';
-import { Appointment } from '../models/appointment';
+import { AppointmentService } from '../../src/services/appointmentService';
+import { MessagingService } from '../../src/services/messagingService';
+import { Appointment } from '../../src/models/appointment';
 
 const appointmentService: AppointmentService = new AppointmentService();
 const messagingService: MessagingService = new MessagingService();

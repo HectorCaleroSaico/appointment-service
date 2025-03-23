@@ -1,6 +1,6 @@
 import { DynamoDBClient, PutItemCommand, UpdateItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { ExecuteStatementCommand, RDSDataClient } from '@aws-sdk/client-rds-data';
-import { Appointment } from '../models/appointment';
+import { Appointment } from '../../models/appointment';
 
 export class AppointmentRepository {
 

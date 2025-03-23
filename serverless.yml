@@ -3,7 +3,6 @@ org: fenrir
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: apponintment-service
 service: appointment-service
-frameworkVersion: '4'
 
 provider:
   name: aws
@@ -51,10 +50,28 @@ provider:
     RDS_CLUSTER_CL_ARN: arn:aws:rds:${aws:region}:${aws:accountId}:cluster:database-cl
     RDS_SECRET_CL_ARN: arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:aws-secret-rds-cl-lm2gYQ
 
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    exclude: 
+      - '**/*'
+    packages: external
+    buildConcurrency: 3
+    sourcemap:
+      type: linked
+      setNodeOptions: true
+
 package:
   individually: true
-  exclude:
-    - '**/*'
+  patterns:
+    - '!**/*'
+    - '.build/**'
+    - '!node_modules/**'
+
+#package:
+  #exclude:
+    # - '**/*'
     #- node_modules/**
     #- package-lock.json
     #- package.json
@@ -65,13 +82,10 @@ package:
 
 functions:
   appointment:
-    handler: src/handlers/appointment.handler
+    handler: src/application/handlers/appointment.handler
     package:
       include:
-        - src/handlers/appointment.mjs
-        - src/services/**
-        - src/repositories/**
-        - src/models/**
+        - src/application/handlers/appointment.ts
     events:
       - http:
           path: appointments
@@ -83,13 +97,15 @@ functions:
           arn: !GetAtt AppointmentQueue.Arn
 
   appointmentPE:
-    handler: src/handlers/appointmentPE.handler
+    handler: src/application/handlers/appointmentPE.handler
     package:
       include:
-        - src/handlers/appointmentPE.mjs
-        - src/services/**
-        - src/repositories/**
-        - src/models/**
+        - src/application/handlers/appointmentPE.ts
+        - src/application/dtos/**
+        - src/application/services/**
+        - src/config/**
+        - src/domain/**
+        - src/infrastructure/**
     events:
       - sqs:
           arn: !GetAtt SQSQueuePE.Arn
@@ -102,13 +118,15 @@ functions:
               - 'AppointmentPE'
 
   appointmentCL:
-    handler: src/handlers/appointmentCl.handler
+    handler: src/application/handlers/appointmentCl.handler
     package:
       include:
-        - src/handlers/appointmentCL.mjs
-        - src/services/**
-        - src/repositories/**
-        - src/models/**
+        - src/application/handlers/appointmentCL.ts
+        - src/application/dtos/**
+        - src/application/services/**
+        - src/config/**
+        - src/domain/**
+        - src/infrastructure/**
     events:
       - sqs:
           arn: !GetAtt SQSQueueCL.Arn

@@ -1,6 +1,6 @@
 import { SQSEvent, Context } from 'aws-lambda';
-import { EventService } from '../services/eventService';
-import { Appointment } from '../models/appointment';
+import { EventService } from '../../src/services/eventService';
+import { Appointment } from '../../src/models/appointment';
 
 const eventService: EventService = new EventService();
 

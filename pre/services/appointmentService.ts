@@ -1,5 +1,5 @@
 import { AppointmentRepository } from '../repositories/appointmentRepository';
-import { Appointment } from '../models/appointment';
+import { Appointment } from '../../models/appointment';
 
 export class AppointmentService {
     

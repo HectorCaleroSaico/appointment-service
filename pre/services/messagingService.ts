@@ -1,5 +1,5 @@
 import { SNSRepository } from '../repositories/snsRepository';
-import { Appointment } from '../models/appointment';
+import { Appointment } from '../../models/appointment';
 
 export class MessagingService {
 

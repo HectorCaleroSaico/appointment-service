@@ -4,6 +4,7 @@
   "description": "AWS serverless service in NodeJs",
   "main": "index.js",
   "scripts": {
+    "deploy": "tsc && serverless deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Hector Calero Saico",
@@ -16,9 +17,9 @@
     "@aws-sdk/client-sqs": "^3.772.0",
     "@types/aws-lambda": "^8.10.147",
     "@types/node": "^22.13.11",
-    "serverless": "^4.9.0",
-    "serverless-offline": "^14.4.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "serverless": "^4.9.0"
   }
 }

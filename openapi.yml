@@ -1,0 +1,100 @@
+openapi: 3.0.0
+components:
+  schemas:
+    BodyAppointmentRequest:
+      type: object
+      properties:
+        insuredId:
+          type: string
+          description: 5-digit insured code (can have leading zeros)
+          example: '00123'
+        scheduleId:
+          type: number
+          description: ID of the appointment slot
+          example: 100
+        countryISO:
+          type: string
+          enum:
+            - PE
+            - CL
+          description: Country identifier
+          example: PE
+    AppointmentResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+                description: Unique ID of the appointment
+              insuredId:
+                type: string
+                description: 5-digit insured code
+              status:
+                type: string
+                description: Current status of the appointment
+    PostOkResponse:
+      type: object
+      properties:
+        messsage:
+          type: string
+          description: message
+    PostBadRequestResponse:
+      type: object
+      properties:
+        messsage:
+          type: string
+          description: message
+    PostErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: message
+  securitySchemes: {}
+info:
+  title: Appointment Service
+  description: Este es un servicio Node JS con serverless framework.
+  version: 1.0.0
+paths:
+  /appointments:
+    post:
+      operationId: appointment
+      summary: Registrar cita
+      description: >-
+        Registra una cita en DynamoDB y en la base de datos RDS del país
+        correspondiente.
+      responses:
+        '200':
+          description: Appointment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOkResponse'
+        '400':
+          description: Missing required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostBadRequestResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostErrorResponse'
+  '/appointments/{insuredId}':
+    get:
+      operationId: appointment
+      summary: Listar citas
+      description: Lista citas por código de asegurado.
+      responses:
+        '200':
+          description: Appointment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'

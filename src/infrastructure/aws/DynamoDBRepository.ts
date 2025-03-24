@@ -1,15 +1,7 @@
-import { DynamoDBClient, PutItemCommand, PutItemCommandOutput, QueryCommand, QueryCommandOutput } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, PutItemCommand, PutItemCommandOutput, QueryCommand, QueryCommandOutput, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { Appointment } from '../../domain/entities/Appointment';
 import { config } from '../../config/config';
-
-const tableName = config.aws.dynamoDB.appointmentTableName || 'Appointments';
-
-/*
-const dynamoDBClient: DynamoDBClient = new DynamoDBClient({
-    region: config.aws.region
-});
-*/
 
 export class DynamoDBRepository implements IAppointmentRepository {
 
@@ -19,10 +11,9 @@ export class DynamoDBRepository implements IAppointmentRepository {
 
     private tableName = config.aws.dynamoDB.appointmentTableName || 'Appointments';
 
-
     async save(appointment: Appointment): Promise<void> {
 
-        const command = new PutItemCommand({
+        const command: PutItemCommand = new PutItemCommand({
             TableName: this.tableName,
             Item: {
                 insuredId: { S: appointment.insuredId },
@@ -34,9 +25,7 @@ export class DynamoDBRepository implements IAppointmentRepository {
             }
         });
         
-        const result: PutItemCommandOutput = await this.dynamoDBClient.send(command);
-
-        console.log('Result: ', result);
+        await this.dynamoDBClient.send(command);
 
     }
 
@@ -45,7 +34,7 @@ export class DynamoDBRepository implements IAppointmentRepository {
 
         if (!insuredId || insuredId === '') return [];
 
-        const command = new QueryCommand({
+        const command: QueryCommand = new QueryCommand({
             TableName: this.tableName,
             KeyConditionExpression: 'insuredId = :id',
             ExpressionAttributeValues: {
@@ -55,14 +44,57 @@ export class DynamoDBRepository implements IAppointmentRepository {
 
         const result: QueryCommandOutput = await this.dynamoDBClient.send(command);
 
-        console.log('Result: ', result);
+        if (!result.Items || result.Items.length == 0) return [];
+        
+        const appointments: Appointment[] = result.Items.reduce<Appointment[]>((accumulator, item) => {
 
-        console.log('Items: ', result?.Items);
+            const insuredId = item.insuredId?.S;
+            const scheduleId = item.scheduleId?.N;
+            const status = item.status?.S;
+            const countryISO = item.countryISO?.S;
+            const createdAt = item.createdAt?.S;
+            const updatedAt = item.updatedAt?.S;
 
-        return [];
+            if (insuredId && scheduleId && status && countryISO && createdAt && updatedAt) accumulator.push(
+                new Appointment(
+                    insuredId,
+                    Number(scheduleId),
+                    status,
+                    countryISO,
+                    new Date(createdAt),
+                    new Date(updatedAt)
+                )
+            );
+
+            return accumulator;
+
+        }, []);
+
+        return appointments;
 
     }
 
-    async updateStatus(insuredId: string, sheduleId: number, status: string): Promise<void> {}
+    async updateStatus(insuredId: string, scheduleId: number, status: string): Promise<void> {
+
+        const command = new UpdateItemCommand({
+            TableName: this.tableName,
+            Key: {
+                insuredId: { S: insuredId },
+                scheduleId: { N: scheduleId.toString() }
+            },
+            UpdateExpression: 'SET #status = :status, #updatedAt = :updatedAt',
+            ExpressionAttributeNames: {
+                '#status': 'status',
+                '#updatedAt': 'updatedAt',
+            },
+            ExpressionAttributeValues: {
+                ':status': { S: status },
+                ':updatedAt': { S: new Date().toISOString() }
+            }
+        });
+
+        await this.dynamoDBClient.send(command);
+
+    }
 
 }

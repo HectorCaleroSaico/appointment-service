@@ -37,18 +37,98 @@ provider:
       Resource: '*'
     - Effect: Allow
       Action:
+        - rds-data:ExecuteStatement
+        - rds-data:BatchExecuteStatement
+        - rds-data:BeginTransaction
+        - rds-data:CommitTransaction
+        - rds-data:RollbackTransaction
+      Resource: "*" 
+    - Effect: Allow
+      Action:
         - secretsmanager:GetSecretValue
       Resource:
-        - 'arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:aws-secret-rds-pe-cOOd6b'
+        - 'arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:secret-rds-database-pe-44yUME'
         - 'arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:aws-secret-rds-cl-lm2gYQ'
   environment:
     SNS_TOPIC_PE_ARN: arn:aws:sns:${aws:region}:${aws:accountId}:SNS_PE
-    SNS_TOPIC_CL_ARN: arn:aws:sns:${aws:region}:${aws:accountId}:SNS_CL,
+    SNS_TOPIC_CL_ARN: arn:aws:sns:${aws:region}:${aws:accountId}:SNS_CL
     EVENT_BUS_NAME: AppointmentBus
-    RDS_CLUSTER_PE_ARN: arn:aws:rds:${aws:region}:${aws:accountId}:cluster:database-pe
-    RDS_SECRET_PE_ARN: arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:aws-secret-rds-pe-cOOd6b
-    RDS_CLUSTER_CL_ARN: arn:aws:rds:${aws:region}:${aws:accountId}:cluster:database-cl
+    RDS_CLUSTER_PE_ARN: arn:aws:rds:${aws:region}:${aws:accountId}:cluster:rds-database-pe
+    RDS_SECRET_PE_ARN: arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:secret-rds-database-pe-44yUME
+    RDS_CLUSTER_CL_ARN: arn:aws:rds:${aws:region}:${aws:accountId}:cluster:rds-database-cl
     RDS_SECRET_CL_ARN: arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:aws-secret-rds-cl-lm2gYQ
+
+plugins:
+  - serverless-openapi-documentation
+
+custom:
+  documentation:
+    version: '1.0.0'
+    title: 'Appointment Service'
+    description: 'Este es un servicio Node JS con serverless framework.'
+    models:
+      - name: BodyAppointmentRequest
+        description: 'request model'
+        contentType: application/json
+        schema:
+          type: object 
+          properties:
+            insuredId:
+              type: string
+              description: '5-digit insured code (can have leading zeros)'
+              example: '00123'
+            scheduleId:
+              type: number
+              description: 'ID of the appointment slot'
+              example: 100
+            countryISO:
+              type: string
+              enum: ['PE', 'CL']
+              description: 'Country identifier'
+              example: 'PE'
+      - name: AppointmentResponse
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            data: 
+              type: array
+              items:
+                type: object
+                properties:
+                  appointmentId:
+                    type: string
+                    description: 'Unique ID of the appointment'
+                  insuredId:
+                    type: string
+                    description: '5-digit insured code'
+                  status:
+                    type: string
+                    description: 'Current status of the appointment'
+      - name: PostOkResponse
+        contentType: application/json
+        schema: 
+          type: object
+          properties: 
+            messsage:
+              type: string
+              description: 'message'
+      - name: PostBadRequestResponse
+        contentType: application/json
+        schema: 
+          type: object
+          properties: 
+            messsage:
+              type: string
+              description: 'message'
+      - name: PostErrorResponse
+        contentType: application/json
+        schema: 
+          type: object
+          properties: 
+            error:
+              type: string
+              description: 'message'
 
 build:
   esbuild:
@@ -69,17 +149,6 @@ package:
     - '.build/**'
     - '!node_modules/**'
 
-#package:
-  #exclude:
-    # - '**/*'
-    #- node_modules/**
-    #- package-lock.json
-    #- package.json
-    #- README.md
-    #- .git/**
-    #- .serverless/** 
-    #- serverless.yml 
-
 functions:
   appointment:
     handler: src/application/handlers/appointment.handler
@@ -90,9 +159,70 @@ functions:
       - http:
           path: appointments
           method: post
+          documentation:
+            summary: 'Registrar cita'
+            description: 'Registra una cita en DynamoDB y en la base de datos RDS del país correspondiente.'
+            requestBody:
+              description: "Appointment details"
+              required: true
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      appointmentId:
+                        description: 'Unique ID of the appointment'
+                        type: string
+                      insuredId:
+                        description: '5-digit insured code'
+                        type: string
+            requestModels:
+              application/json: 'BodyAppointmentRequest'
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: 'Appointment created.'
+                responseModels:
+                  application/json: 'PostOkResponse'
+              - statusCode: 400
+                responseBody:
+                  description: 'Missing required fields.'
+                responseModels:
+                  application/json: 'PostBadRequestResponse'
+              - statusCode: 500
+                responseBody:
+                  description: 'Internal server error.'
+                responseModels:
+                  application/json: 'PostErrorResponse'
       - http:
           path: appointments/{insuredId}
           method: get
+          request:
+            parameters:
+              paths:
+                insuredId: true
+          documentation:
+            summary: 'Listar citas'
+            description: 'Lista citas por código de asegurado.'
+            #parameter:
+              #- name: insuredId
+                #in: path
+                #description: 'Código de asegurado.'
+                #required: true
+                #schema:
+                  #type: string
+            pathParams:
+              - name: 'insuredId'
+                description: 'Código de asegurado.'
+                required: true
+                schema:
+                  type: 'string'
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: 'Appointment created.'
+                responseModels:
+                  application/json: 'AppointmentResponse'
       - sqs:
           arn: !GetAtt AppointmentQueue.Arn
 
@@ -153,7 +283,9 @@ resources:
             AttributeType: S
           - AttributeName: status
             AttributeType: S
-          - AttributeName: date
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: updatedAt
             AttributeType: S
         KeySchema:
           - AttributeName: insuredId
@@ -175,19 +307,18 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-          - IndexName: DateIndex
+          - IndexName: CreatedAtIndex
             KeySchema:
-              - AttributeName: date
+              - AttributeName: createdAt
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-        #GlobalSecondaryIndexes:
-        #- IndexName: CountryIndex
-        #  KeySchema:
-        #    - AttributeName: countryISO
-        #      KeyType: HASH
-        #  Projection:
-        #    ProjectionType: ALL
+          - IndexName: UpdatedAtIndex
+            KeySchema:
+              - AttributeName: updatedAt
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
 
     SNSTopicPE:
       Type: AWS::SNS::Topic
@@ -248,6 +379,20 @@ resources:
       Properties:
         QueueName: AppointmentQueue
 
+    AppointmentQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref AppointmentQueue
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action: sqs:SendMessage
+              Resource: !GetAtt AppointmentQueue.Arn
+
     SNSToSQSSubscriptionPE:
       Type: AWS::SNS::Subscription
       Properties:
@@ -266,34 +411,6 @@ resources:
       Type: AWS::Events::EventBus
       Properties:
         Name: AppointmentBus
-
-    EventBridgeRulePE:
-      Type: AWS::Events::Rule
-      Properties:
-        EventBusName: !Ref EventBridgeBus
-        EventPattern:
-          source:
-            - 'appointment.service'
-          detail-type:
-            - 'AppointmentPE'
-        State: ENABLED
-        Targets:
-          - Arn: !GetAtt SQSQueuePE.Arn
-            Id: 'SQS_PE_Target'
-
-    EventBridgeRuleCL:
-      Type: AWS::Events::Rule
-      Properties:
-        EventBusName: !Ref EventBridgeBus
-        EventPattern:
-          source:
-            - 'appointment.service'
-          detail-type:
-            - 'AppointmentCL'
-        State: ENABLED
-        Targets:
-          - Arn: !GetAtt SQSQueueCL.Arn
-            Id: 'SQS_CL_Target'
 
     EventBridgeRuleToSQS:
       Type: AWS::Events::Rule

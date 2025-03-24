@@ -27,7 +27,7 @@ export const handler = async (event: SQSEvent, context: Context): Promise<APIGat
         await appointmenService.createAppointment(appointmentDTO);
     
         return {
-            statusCode: 200,
+            statusCode: 201,
             body: JSON.stringify({
                 message: 'Appointment created in RDS PE.'
             })

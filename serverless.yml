@@ -197,20 +197,9 @@ functions:
       - http:
           path: appointments/{insuredId}
           method: get
-          request:
-            parameters:
-              paths:
-                insuredId: true
           documentation:
             summary: 'Listar citas'
             description: 'Lista citas por código de asegurado.'
-            #parameter:
-              #- name: insuredId
-                #in: path
-                #description: 'Código de asegurado.'
-                #required: true
-                #schema:
-                  #type: string
             pathParams:
               - name: 'insuredId'
                 description: 'Código de asegurado.'

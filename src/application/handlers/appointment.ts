@@ -52,7 +52,7 @@ const handleApiGateway = async (event: APIGatewayEvent): Promise<APIGatewayProxy
             await appointmentService.createAppointment(appointmentDTO);
 
             return {
-                statusCode: 200,
+                statusCode: 201,
                 body: JSON.stringify({
                     message: 'Appointment created.'
                 })

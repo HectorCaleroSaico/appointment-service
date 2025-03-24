@@ -7,7 +7,7 @@ import { AppointmentDTO } from '../dtos/AppointmentDTO';
 const rdsRepository: RDSRepository = new RDSRepository();
 const eventBridgeService: EventBridgeService = new EventBridgeService();
 
-export const handler = async (event: SQSEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: SQSEvent): Promise<APIGatewayProxyResult> => {
 
     try {
         
@@ -27,7 +27,7 @@ export const handler = async (event: SQSEvent, context: Context): Promise<APIGat
         await appointmenService.createAppointment(appointmentDTO);
     
         return {
-            statusCode: 200,
+            statusCode: 201,
             body: JSON.stringify({
                 message: 'Appointment created in RDS PE.'
             })

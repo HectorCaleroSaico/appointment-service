@@ -96,7 +96,7 @@ serverless deploy
 
 > 📌 URLs generadas:
 
-API Gateway: https://74krqwtf02.execute-api.us-east-1.amazonaws.com/dev/appointments
+API Gateway Desplegado: https://74krqwtf02.execute-api.us-east-1.amazonaws.com/dev/appointments
 
 ## 📚 Documentación API
 El proyecto genera automáticamente un archivo openapi.yml y una interfaz Swagger UI.
